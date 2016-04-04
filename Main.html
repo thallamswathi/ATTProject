@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Make appointments</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/datepicker.css">
+  <script src="js/jquery-1.9.1.min.js"></script>
+  <script src="js/bootstrap-datepicker.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <h2>Appointments</h2>
+  <form method="POST" action="cgi-New.pl" class="form-horizontal" role="form">
+    <div class="form-group">
+	  <div class="col-sm-1">
+         <input type="submit" class="btn btn-primary btn-md" id="btnNew" value="New"/>
+	  </div>	 
+	  <div class="col-sm-2">
+          <button type="button" class="btn btn-primary btn-md" id="btnCancel" >Cancel</button> 		
+	  </div>  
+	</div>
+	<div id = "hiddenform">   
+    <div class="form-group">
+      <label class="col-sm-1 control-label" for="inputDate">Date</label>
+	  <div class="col-sm-5">
+        <input class="form-control" type="text" placeholder="click to show datepicker"  name="Date" id="inputDate" required>
+	  </div>	
+    </div>
+	  <div class="form-group">
+	    <label class="col-sm-1 control-label" for="inputTime">Time</label>
+		<div class="col-sm-5">
+           <input class="form-control" type="text" pattern="([0-1]{1}[0-9]{1}|20|21|22|23):[0-5]{1}[0-9]{1}" placeholder="Enter time in format HH:MM"  id="inputTime" name="Time" required >
+		</div>
+	  </div>
+	  <div class="form-group">
+	    <label class="col-sm-1 control-label" for="inputDesc">Description</label>
+		<div class="col-sm-5">
+           <input class="form-control" type="text" placeholder="click to enter description" id="inputDesc" name="Description" required>
+		</div>
+	  </div>
+	</div>
+  <div class="form-group">
+      <div class="col-sm-4">
+         <input type="text" class="form-control" id="searchtxt" placeholder="Enter text to search">
+	  </div>
+	  <div class="col-sm-2">
+         <button type="button" class="btn btn-primary btn-md" id="btnSearch">Search</button>    	  
+	  </div>
+  </div>
+  <div class="form-group">
+      <div class="col-sm-8">
+	     <div class="table-responsive" id="tblappointments">   
+		 <table class="table table-hover" id="AppointmentsTable">
+		    <thead>
+			  <tr class="info">
+				<th>#</th>
+				<th>DATE</th>
+				<th>TIME</th>
+				<th>DESCRIPTION</th>
+			  </tr>
+			</thead>
+		 </table>	
+		 </div>
+	  </div>
+  </div>	  
+  </form>
+</div>
+</body>
+ <script type="text/javascript">
+            // When the document is ready
+            $(document).ready(function () {
+                $("#btnCancel").hide()
+				$("#hiddenform").hide()
+				$("#tblappointments").hide()
+				//specifed format of date according to the column specifications in mysql
+                $('#inputDate').datepicker({
+                    format: "yyyy-mm-dd"
+                });  
+				$('#inputDate').on('changeDate', function(ev){					
+					$(this).datepicker('hide');
+				});
+				//On New button click
+				$("#btnNew").click(function(){
+					$("#btnNew").val("Add");
+					$("#btnCancel").show()
+				    $("#hiddenform").show()
+				});
+				//on Cancel button click
+				$("#btnCancel").click(function(){
+					$("#btnNew").val("New");
+					$("#btnCancel").hide()
+				    $("#hiddenform").hide()
+				});
+				//on search button click
+				$("#btnSearch").click(function(){
+					$("#tblappointments").show()
+					var searchText = $("#searchtxt").val();
+					//if search text is not empty, ajax call.
+					if(searchText) 
+					{
+					    $.ajax({
+						    type: "GET",
+							url:"cgi-script.pl",
+							contentType: "application/json; charset=utf-8",
+							dataType: "json",
+							data: "searchText=" + searchText ,
+							error: function(XMLHttpRequest, textStatus, errorThrown) { 
+								alert("responseText: " + XMLHttpRequest.responseText 
+								+ ", textStatus: " + textStatus 
+								+ ", errorThrown: " + errorThrown);
+							}, 
+							success:function(data){
+							   drawTable(data);
+							}
+					   });
+				    }
+					else
+					{ //if search text is empty ajax call.
+						$.ajax({
+						    type: "GET",
+							url:"cgi-script.pl",
+							contentType: "application/json; charset=utf-8",
+							dataType: "json",
+							data: "",
+							error: function(XMLHttpRequest, textStatus, errorThrown) { 
+								alert("responseText: " + XMLHttpRequest.responseText 
+								+ ", textStatus: " + textStatus 
+								+ ", errorThrown: " + errorThrown);
+							}, 
+							success:function(data){							   
+							   drawTable(data);
+							}
+					   });
+					
+					}
+				});
+				//append new rows to table retrieved from database through ajax call. 
+				function drawTable(data){
+				   $("#AppointmentsTable td").parent().remove();
+				   for ( i=0; i< data.length; i++) {
+                        var row = $("<tr />")
+						$("#AppointmentsTable").append(row); 
+						row.append($("<td>" + data[i].id + "</td>"));
+						row.append($("<td>" + data[i].appointment_date + "</td>"));
+						row.append($("<td>" + data[i].appointment_time + "</td>"));
+						row.append($("<td>" + data[i].description + "</td>"));
+                    }
+                }					
+            
+            });
+</script>
+
+</html>
